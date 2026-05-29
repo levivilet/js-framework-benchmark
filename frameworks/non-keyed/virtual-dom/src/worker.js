@@ -189,6 +189,46 @@ const view = () =>
     ],
   )
 
+const escapeHtml = (value) =>
+  String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+
+const viewHtml = () => {
+  const rowsHtml = data
+    .map(
+      (item) => `<tr class="${item.id === selected ? "danger" : ""}" data-id="${item.id}">
+  <td class="col-md-1">${item.id}</td>
+  <td class="col-md-4"><a class="lbl">${escapeHtml(item.label)}</a></td>
+  <td class="col-md-1"><a class="remove"><span class="remove glyphicon glyphicon-remove" aria-hidden="true"></span></a></td>
+  <td class="col-md-6"></td>
+</tr>`,
+    )
+    .join("")
+
+  return `<div class="container" id="main">
+  <div class="jumbotron">
+    <div class="row">
+      <div class="col-md-6"><h1>virtual-dom</h1></div>
+      <div class="col-md-6">
+        <div class="row">
+          <div class="col-sm-6 smallpad"><button id="run" class="btn btn-primary btn-block">Create 1,000 rows</button></div>
+          <div class="col-sm-6 smallpad"><button id="runlots" class="btn btn-primary btn-block">Create 10,000 rows</button></div>
+          <div class="col-sm-6 smallpad"><button id="add" class="btn btn-primary btn-block">Append 1,000 rows</button></div>
+          <div class="col-sm-6 smallpad"><button id="update" class="btn btn-primary btn-block">Update every 10th row</button></div>
+          <div class="col-sm-6 smallpad"><button id="clear" class="btn btn-primary btn-block">Clear</button></div>
+          <div class="col-sm-6 smallpad"><button id="swaprows" class="btn btn-primary btn-block">Swap Rows</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <table class="table table-hover table-striped test-data"><tbody>${rowsHtml}</tbody></table>
+  <span class="preloadicon glyphicon glyphicon-remove" aria-hidden="true"></span>
+</div>`
+}
+
 const update = (action, id) => {
   switch (action) {
     case "init":
@@ -243,6 +283,11 @@ const update = (action, id) => {
 const rpc = createRpc(self, {
   update({ action, id }) {
     update(action, id)
+    if (action === "runlots") {
+      currentNodes = view()
+      rpc.notify("renderHtml", { html: viewHtml() })
+      return
+    }
     const nextNodes = view()
     if (currentNodes.length === 0) {
       currentNodes = nextNodes
