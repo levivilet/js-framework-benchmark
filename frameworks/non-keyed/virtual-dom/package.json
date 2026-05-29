@@ -12,7 +12,7 @@
     "language": "JavaScript"
   },
   "scripts": {
-    "build-prod": "rimraf dist && esbuild src/main.js --bundle --format=esm --outfile=dist/main.js --minify && esbuild src/worker.js --bundle --format=esm --outfile=dist/worker.js --minify"
+    "build-prod": "rimraf dist && rollup -c"
   },
   "license": "MIT",
   "dependencies": {
@@ -20,7 +20,9 @@
     "@lvce-editor/virtual-dom-worker": "9.11.0"
   },
   "devDependencies": {
-    "esbuild": "0.25.12",
+    "@rollup/plugin-node-resolve": "16.0.3",
+    "@rollup/plugin-terser": "1.0.0",
+    "rollup": "4.60.4",
     "rimraf": "6.1.3"
   }
 }
