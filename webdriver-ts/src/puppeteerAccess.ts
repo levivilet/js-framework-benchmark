@@ -2,10 +2,25 @@ import * as puppeteer from "puppeteer-core";
 import { Page } from "puppeteer-core";
 import { BenchmarkOptions, wait } from "./common.js";
 
+async function queryElement(page: Page, selector: string) {
+  const element = await page.$(selector);
+  if (element) return element;
+  if (selector.startsWith("pierce/")) {
+    return page.$(selector.slice("pierce/".length));
+  }
+  return null;
+}
+
+async function queryElements(page: Page, selector: string) {
+  const elements = await page.$$(selector);
+  if (elements.length > 0 || !selector.startsWith("pierce/")) return elements;
+  return page.$$(selector.slice("pierce/".length));
+}
+
 export async function checkElementNotExists(page: Page, selector: string) {
   let start = Date.now();
   for (let k = 0; k < 10; k++) {
-    let sel = await page.$(selector);
+    let sel = await queryElement(page, selector);
     if (!sel) {
       return;
     }
@@ -20,7 +35,7 @@ export async function checkElementNotExists(page: Page, selector: string) {
 export async function checkElementExists(page: Page, selector: string) {
   let start = Date.now();
   for (let k = 0; k < 10; k++) {
-    let sel = await page.$(selector);
+    let sel = await queryElement(page, selector);
     if (sel) {
       await sel.dispose();
       return sel;
@@ -33,7 +48,7 @@ export async function checkElementExists(page: Page, selector: string) {
 }
 
 export async function clickElement(page: Page, selector: string) {
-  let elem = await page.$(selector);
+  let elem = await queryElement(page, selector);
   if (!elem || !elem.asElement()) throw `clickElementByXPath ${selector} failed. Element was not found.`;
   await elem.click();
   await elem.dispose();
@@ -43,7 +58,7 @@ export async function checkElementContainsText(page: Page, selector: string, exp
   let start = Date.now();
   let txt;
   for (let k = 0; k < 10; k++) {
-    let elem = await page.$(selector);
+    let elem = await queryElement(page, selector);
     if (elem) {
       txt = await elem.evaluate((e: any) => e?.innerText);
       if (txt === undefined) console.log("WARNING: checkElementContainsText was undefined");
@@ -62,7 +77,7 @@ export async function checkElementContainsText(page: Page, selector: string, exp
 export async function checkElementHasClass(page: Page, selector: string, className: string): Promise<void> {
   let clazzes;
   for (let k = 0; k < 10; k++) {
-    let elem = await page.$(selector);
+    let elem = await queryElement(page, selector);
     if (elem) {
       let clazzes = await elem.evaluate((e: any) => e?.classList);
       if (clazzes === undefined) console.log("WARNING: checkElementHasClass was undefined");
@@ -78,7 +93,7 @@ export async function checkElementHasClass(page: Page, selector: string, classNa
 }
 
 export async function checkCountForSelector(page: Page, selector: string, expectedCount: number): Promise<void> {
-  let elems = await page.$$(selector);
+  let elems = await queryElements(page, selector);
   if (elems) {
     if (expectedCount !== elems.length) {
       throw `checkCountForSelector ${selector} failed. expected ${expectedCount}, but ${elems.length} were found`;

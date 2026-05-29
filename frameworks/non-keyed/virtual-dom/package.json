@@ -1,0 +1,26 @@
+{
+  "name": "js-framework-benchmark-non-keyed-virtual-dom",
+  "version": "1.0.0",
+  "description": "lvce-editor virtual-dom benchmark",
+  "type": "module",
+  "js-framework-benchmark": {
+    "frameworkVersionFromPackage": "@lvce-editor/virtual-dom:@lvce-editor/virtual-dom-worker",
+    "frameworkHomeURL": "https://github.com/lvce-editor/virtual-dom",
+    "issues": [
+      801
+    ],
+    "language": "JavaScript"
+  },
+  "scripts": {
+    "build-prod": "rimraf dist && esbuild src/main.js --bundle --format=esm --outfile=dist/main.js --minify && esbuild src/worker.js --bundle --format=esm --outfile=dist/worker.js --minify"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@lvce-editor/virtual-dom": "9.11.0",
+    "@lvce-editor/virtual-dom-worker": "9.11.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "rimraf": "6.1.3"
+  }
+}
