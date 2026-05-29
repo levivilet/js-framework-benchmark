@@ -69,30 +69,77 @@ let currentNodes = []
 
 const random = (max) => Math.round(Math.random() * 1000) % max
 
-const textNode = (value) => [
+const getButtonDom = (id, label) => [
+  {
+    type: Div,
+    className: "col-sm-6 smallpad",
+    childCount: 1,
+  },
+  {
+    type: Button,
+    id,
+    className: "btn btn-primary btn-block",
+    childCount: 1,
+  },
   {
     type: Text,
-    text: String(value),
+    text: label,
     childCount: 0,
   },
 ]
 
-const element = (type, props = {}, children = []) => {
-  const flatChildren = []
-  for (const child of children) {
-    for (const item of child) {
-      flatChildren.push(item)
-    }
-  }
-  return [
-    {
-      type,
-      ...props,
-      childCount: children.length,
-    },
-    ...flatChildren,
-  ]
-}
+const BUTTONS = [
+  getButtonDom("run", "Create 1,000 rows"),
+  getButtonDom("runlots", "Create 10,000 rows"),
+  getButtonDom("add", "Append 1,000 rows"),
+  getButtonDom("update", "Update every 10th row"),
+  getButtonDom("clear", "Clear"),
+  getButtonDom("swaprows", "Swap Rows"),
+]
+
+const BUTTON_ROW_DOM = [
+  {
+    type: Div,
+    className: "row",
+    childCount: BUTTONS.length,
+  },
+  ...BUTTONS.flat(),
+]
+
+const HEADER_TITLE_DOM = [
+  {
+    type: Div,
+    className: "col-md-6",
+    childCount: 1,
+  },
+  {
+    type: H1,
+    childCount: 1,
+  },
+  {
+    type: Text,
+    text: "virtual-dom",
+    childCount: 0,
+  },
+]
+
+const HEADER_ACTIONS_DOM = [
+  {
+    type: Div,
+    className: "col-md-6",
+    childCount: 1,
+  },
+  ...BUTTON_ROW_DOM,
+]
+
+const PRELOAD_ICON_DOM = [
+  {
+    type: Span,
+    className: "preloadicon glyphicon glyphicon-remove",
+    "aria-hidden": "true",
+    childCount: 0,
+  },
+]
 
 const buildData = (count) => {
   const newData = new Array(count)
@@ -112,84 +159,95 @@ const setData = (newData) => {
   }
 }
 
-const rowView = (item) =>
-  element(
-    Tr,
-    {
-      className: item.id === selected ? "danger" : "",
-      "data-id": String(item.id),
-    },
-    [
-      element(Td, { className: "col-md-1" }, [textNode(item.id)]),
-      element(Td, { className: "col-md-4" }, [
-        element(A, { className: "lbl" }, [textNode(item.label)]),
-      ]),
-      element(Td, { className: "col-md-1" }, [
-        element(A, { className: "remove" }, [
-          element(
-            Span,
-            {
-              className: "remove glyphicon glyphicon-remove",
-              "aria-hidden": "true",
-            },
-            [],
-          ),
-        ]),
-      ]),
-      element(Td, { className: "col-md-6" }, []),
-    ],
-  )
+const getRowDom = (item) => [
+  {
+    type: Tr,
+    className: item.id === selected ? "danger" : "",
+    "data-id": String(item.id),
+    childCount: 4,
+  },
+  {
+    type: Td,
+    className: "col-md-1",
+    childCount: 1,
+  },
+  {
+    type: Text,
+    text: String(item.id),
+    childCount: 0,
+  },
+  {
+    type: Td,
+    className: "col-md-4",
+    childCount: 1,
+  },
+  {
+    type: A,
+    className: "lbl",
+    childCount: 1,
+  },
+  {
+    type: Text,
+    text: item.label,
+    childCount: 0,
+  },
+  {
+    type: Td,
+    className: "col-md-1",
+    childCount: 1,
+  },
+  {
+    type: A,
+    className: "remove",
+    childCount: 1,
+  },
+  {
+    type: Span,
+    className: "remove glyphicon glyphicon-remove",
+    "aria-hidden": "true",
+    childCount: 0,
+  },
+  {
+    type: Td,
+    className: "col-md-6",
+    childCount: 0,
+  },
+]
 
-const buttonView = (id, label) =>
-  element(Div, { className: "col-sm-6 smallpad" }, [
-    element(
-      Button,
-      {
-        id,
-        className: "btn btn-primary btn-block",
-      },
-      [textNode(label)],
-    ),
-  ])
-
-const view = () =>
-  element(
-    Div,
+const view = () => {
+  const rowNodes = data.flatMap(getRowDom)
+  return [
     {
+      type: Div,
       className: "container",
       id: "main",
+      childCount: 3,
     },
-    [
-      element(Div, { className: "jumbotron" }, [
-        element(Div, { className: "row" }, [
-          element(Div, { className: "col-md-6" }, [
-            element(H1, {}, [textNode("virtual-dom")]),
-          ]),
-          element(Div, { className: "col-md-6" }, [
-            element(Div, { className: "row" }, [
-              buttonView("run", "Create 1,000 rows"),
-              buttonView("runlots", "Create 10,000 rows"),
-              buttonView("add", "Append 1,000 rows"),
-              buttonView("update", "Update every 10th row"),
-              buttonView("clear", "Clear"),
-              buttonView("swaprows", "Swap Rows"),
-            ]),
-          ]),
-        ]),
-      ]),
-      element(Table, { className: "table table-hover table-striped test-data" }, [
-        element(TBody, {}, data.map(rowView)),
-      ]),
-      element(
-        Span,
-        {
-          className: "preloadicon glyphicon glyphicon-remove",
-          "aria-hidden": "true",
-        },
-        [],
-      ),
-    ],
-  )
+    {
+      type: Div,
+      className: "jumbotron",
+      childCount: 1,
+    },
+    {
+      type: Div,
+      className: "row",
+      childCount: 2,
+    },
+    ...HEADER_TITLE_DOM,
+    ...HEADER_ACTIONS_DOM,
+    {
+      type: Table,
+      className: "table table-hover table-striped test-data",
+      childCount: 1,
+    },
+    {
+      type: TBody,
+      childCount: data.length,
+    },
+    ...rowNodes,
+    ...PRELOAD_ICON_DOM,
+  ]
+}
 
 const update = (action, id) => {
   switch (action) {
