@@ -14,10 +14,6 @@ const rpc = createRpc(worker, {
     renderInto(app, nodes)
     root = app.firstElementChild
   },
-  renderHtml({ html }) {
-    app.innerHTML = html
-    root = app.firstElementChild
-  },
   patch({ patches }) {
     if (root) {
       applyPatch(root, patches)
