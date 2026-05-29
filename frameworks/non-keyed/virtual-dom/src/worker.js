@@ -132,11 +132,84 @@ const HEADER_ACTIONS_DOM = [
   ...BUTTON_ROW_DOM,
 ]
 
+const CONTAINER_NODE = {
+  type: Div,
+  className: "container",
+  id: "main",
+  childCount: 3,
+}
+
+const JUMBOTRON_NODE = {
+  type: Div,
+  className: "jumbotron",
+  childCount: 1,
+}
+
+const HEADER_ROW_NODE = {
+  type: Div,
+  className: "row",
+  childCount: 2,
+}
+
+const TABLE_NODE = {
+  type: Table,
+  className: "table table-hover table-striped test-data",
+  childCount: 1,
+}
+
 const PRELOAD_ICON_DOM = [
   {
     type: Span,
     className: "preloadicon glyphicon glyphicon-remove",
     "aria-hidden": "true",
+    childCount: 0,
+  },
+]
+
+const ROW_ID_CELL_DOM = [
+  {
+    type: Td,
+    className: "col-md-1",
+    childCount: 1,
+  },
+]
+
+const ROW_LABEL_CELL_DOM = [
+  {
+    type: Td,
+    className: "col-md-4",
+    childCount: 1,
+  },
+  {
+    type: A,
+    className: "lbl",
+    childCount: 1,
+  },
+]
+
+const ROW_REMOVE_CELL_DOM = [
+  {
+    type: Td,
+    className: "col-md-1",
+    childCount: 1,
+  },
+  {
+    type: A,
+    className: "remove",
+    childCount: 1,
+  },
+  {
+    type: Span,
+    className: "remove glyphicon glyphicon-remove",
+    "aria-hidden": "true",
+    childCount: 0,
+  },
+]
+
+const ROW_EMPTY_CELL_DOM = [
+  {
+    type: Td,
+    className: "col-md-6",
     childCount: 0,
   },
 ]
@@ -166,80 +239,31 @@ const getRowDom = (item) => [
     "data-id": String(item.id),
     childCount: 4,
   },
-  {
-    type: Td,
-    className: "col-md-1",
-    childCount: 1,
-  },
+  ...ROW_ID_CELL_DOM,
   {
     type: Text,
     text: String(item.id),
     childCount: 0,
   },
-  {
-    type: Td,
-    className: "col-md-4",
-    childCount: 1,
-  },
-  {
-    type: A,
-    className: "lbl",
-    childCount: 1,
-  },
+  ...ROW_LABEL_CELL_DOM,
   {
     type: Text,
     text: item.label,
     childCount: 0,
   },
-  {
-    type: Td,
-    className: "col-md-1",
-    childCount: 1,
-  },
-  {
-    type: A,
-    className: "remove",
-    childCount: 1,
-  },
-  {
-    type: Span,
-    className: "remove glyphicon glyphicon-remove",
-    "aria-hidden": "true",
-    childCount: 0,
-  },
-  {
-    type: Td,
-    className: "col-md-6",
-    childCount: 0,
-  },
+  ...ROW_REMOVE_CELL_DOM,
+  ...ROW_EMPTY_CELL_DOM,
 ]
 
 const view = () => {
   const rowNodes = data.flatMap(getRowDom)
   return [
-    {
-      type: Div,
-      className: "container",
-      id: "main",
-      childCount: 3,
-    },
-    {
-      type: Div,
-      className: "jumbotron",
-      childCount: 1,
-    },
-    {
-      type: Div,
-      className: "row",
-      childCount: 2,
-    },
+    CONTAINER_NODE,
+    JUMBOTRON_NODE,
+    HEADER_ROW_NODE,
     ...HEADER_TITLE_DOM,
     ...HEADER_ACTIONS_DOM,
-    {
-      type: Table,
-      className: "table table-hover table-striped test-data",
-      childCount: 1,
-    },
+    TABLE_NODE,
     {
       type: TBody,
       childCount: data.length,
