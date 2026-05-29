@@ -80,7 +80,9 @@ const textNode = (value) => [
 const element = (type, props = {}, children = []) => {
   const flatChildren = []
   for (const child of children) {
-    flatChildren.push(...child)
+    for (const item of child) {
+      flatChildren.push(item)
+    }
   }
   return [
     {
