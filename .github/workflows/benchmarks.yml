@@ -29,11 +29,29 @@ jobs:
   benchmarks:
     name: Run benchmark results
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 180
 
     env:
-      BENCHMARK_COUNT: ${{ inputs.count || '3' }}
+      BENCHMARK_COUNT: ${{ github.event_name == 'pull_request' && '1' || inputs.count || '3' }}
       INPUT_FRAMEWORKS: ${{ inputs.frameworks || '' }}
+      PR_NON_KEYED_COMPARISON_FRAMEWORKS: >-
+        non-keyed/aberdeen non-keyed/alins non-keyed/apprun non-keyed/arrowjs
+        non-keyed/art non-keyed/aurelia non-keyed/bau non-keyed/binding.scala
+        non-keyed/bui non-keyed/cyclejs-dom non-keyed/cydon non-keyed/deleight
+        non-keyed/delorean non-keyed/dlightjs non-keyed/doz non-keyed/ef-js
+        non-keyed/fast non-keyed/frei-hooks non-keyed/gyron non-keyed/hydro-js
+        non-keyed/imba non-keyed/inferno non-keyed/knno-jsx non-keyed/kobold
+        non-keyed/korvin non-keyed/legend-state-optimized non-keyed/lit
+        non-keyed/literaljs non-keyed/lit-html non-keyed/maquette non-keyed/mikado
+        non-keyed/mimbl non-keyed/mogwai non-keyed/mutraction non-keyed/openui5
+        non-keyed/plastron-dom non-keyed/qingkuai non-keyed/quel non-keyed/ractive
+        non-keyed/ravel non-keyed/redom non-keyed/reflex-dom non-keyed/reken
+        non-keyed/riot non-keyed/san non-keyed/scarlets-frame non-keyed/seed
+        non-keyed/skruv-liten non-keyed/slim-js non-keyed/solarite non-keyed/stdweb
+        non-keyed/svelte-classic non-keyed/udomsay-esx non-keyed/uhtml
+        non-keyed/ui5-webcomponents non-keyed/vanillajs non-keyed/vanillajs-1
+        non-keyed/vanillajs-3 non-keyed/virtual-dom non-keyed/vode non-keyed/vue
+        non-keyed/vue-jsx-vapor non-keyed/vue-vapor non-keyed/wallace
 
     steps:
       - name: Check out repository
@@ -77,8 +95,13 @@ jobs:
                 echo "::error::Framework '${framework}' must start with keyed/ or non-keyed/."
                 exit 1
                 ;;
-            esac
+              esac
           done
+
+          if [[ "${{ github.event_name }}" == "pull_request" && "$has_non_keyed" == true ]]; then
+            read -r -a comparison_frameworks <<< "$PR_NON_KEYED_COMPARISON_FRAMEWORKS"
+            run_frameworks+=("${comparison_frameworks[@]}")
+          fi
 
           if [[ ${#run_frameworks[@]} -eq 0 ]]; then
             run_frameworks=("keyed/vanillajs" "non-keyed/vanillajs")
