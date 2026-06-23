@@ -112,8 +112,10 @@ jobs:
 
           mapfile -t unique_frameworks < <(printf "%s\n" "${run_frameworks[@]}" | sort -u)
           framework_list="${unique_frameworks[*]}"
+          changed_framework_list="${changed_frameworks[*]}"
 
           echo "run_frameworks=${framework_list}" >> "$GITHUB_OUTPUT"
+          echo "changed_frameworks=${changed_framework_list}" >> "$GITHUB_OUTPUT"
           echo "Benchmarking: ${framework_list}"
 
       - name: Set up Node.js
@@ -142,13 +144,45 @@ jobs:
           /usr/bin/google-chrome --version
 
       - name: Build benchmark implementations
+        id: build-frameworks
         env:
           RUN_FRAMEWORKS: ${{ steps.frameworks.outputs.run_frameworks }}
+          REQUIRED_FRAMEWORKS: ${{ steps.frameworks.outputs.changed_frameworks }}
         shell: bash
         run: |
           set -euo pipefail
           read -r -a frameworks <<< "$RUN_FRAMEWORKS"
-          node -e 'import("./cli/rebuild-build-single.js").then(({ rebuildFrameworks }) => process.exit(rebuildFrameworks(process.argv.slice(1), true) ? 0 : 1));' "${frameworks[@]}"
+          read -r -a required_frameworks <<< "$REQUIRED_FRAMEWORKS"
+          built_frameworks=()
+          failed_frameworks=()
+
+          for framework in "${frameworks[@]}"; do
+            if node -e 'import("./cli/rebuild-build-single.js").then(({ rebuildFrameworks }) => process.exit(rebuildFrameworks(process.argv.slice(1), true) ? 0 : 1));' "$framework"; then
+              built_frameworks+=("$framework")
+            else
+              failed_frameworks+=("$framework")
+              echo "::warning::Skipping comparison framework '${framework}' because its build failed."
+            fi
+          done
+
+          for required_framework in "${required_frameworks[@]}"; do
+            [[ -z "$required_framework" ]] && continue
+            if ! printf '%s\n' "${built_frameworks[@]}" | grep -Fxq "$required_framework"; then
+              echo "::error::Required changed framework '${required_framework}' did not build."
+              exit 1
+            fi
+          done
+
+          if [[ ${#built_frameworks[@]} -eq 0 ]]; then
+            echo "::error::No benchmark implementations built successfully."
+            exit 1
+          fi
+
+          echo "Built frameworks: ${built_frameworks[*]}"
+          if [[ ${#failed_frameworks[@]} -gt 0 ]]; then
+            echo "Skipped frameworks: ${failed_frameworks[*]}"
+          fi
+          echo "built_frameworks=${built_frameworks[*]}" >> "$GITHUB_OUTPUT"
 
       - name: Start benchmark server
         shell: bash
@@ -169,7 +203,7 @@ jobs:
 
       - name: Run benchmarks
         env:
-          RUN_FRAMEWORKS: ${{ steps.frameworks.outputs.run_frameworks }}
+          RUN_FRAMEWORKS: ${{ steps.build-frameworks.outputs.built_frameworks }}
         shell: bash
         run: |
           set -euo pipefail
