@@ -118,10 +118,21 @@ class JSFrameworkBenchmark extends Solarite {
 
 		if (runs > 1) {
 			console.log('---');
-			let avg = results.reduce((a, b) => a + b) / results.length;
-			console.log(`Min: ${Math.min(...results)}ms`);
-			console.log(`Max: ${Math.max(...results)}ms`);
-			console.log(`Avg: ${avg}ms`);
+			let cold = results[0];
+			let warm = results.slice(1);
+			let warmAvg = warm.reduce((a, b) => a + b) / warm.length;
+			let best = Math.min(...results);
+			console.log(`Cold: ${cold}ms`);
+			console.log(`Warm avg: ${warmAvg}ms`);
+			console.log(`Best: ${best}ms`);
+
+			if (window.parent && window.parent.onBenchmarkComplete) {
+				window.parent.onBenchmarkComplete(warmAvg, best, cold);
+			}
+		} else if (Number(runs) === 1 && results.length > 0) {
+			if (window.parent && window.parent.onBenchmarkComplete) {
+				window.parent.onBenchmarkComplete(results[0], results[0]);
+			}
 		}
 	}
 
@@ -179,7 +190,7 @@ class JSFrameworkBenchmark extends Solarite {
 	}
 
 	render() {
-		let options = {}; //{ids: false, scripts: false, styles: false} // doesn't seem to make that much performance difference to disable these?
+		let options = {ids: false, scripts: false, styles: false, eventDelegation: true};
 		h(this, options)`
 		<div class="container">
 			<div class="jumbotron">
@@ -190,27 +201,27 @@ class JSFrameworkBenchmark extends Solarite {
 					<div class="col-md-6">
 						<div class="row">
 							<div class="col-sm-6 smallpad">
-								<button id="run" class="btn btn-primary btn-block" type="button" 
+								<button id="run" class="btn btn-primary btn-block" type="button"
 									onclick=${this.runBench}>Create 1,000 rows</button>
 							</div>
 							<div class="col-sm-6 smallpad">
-								<button id="runlots" class="btn btn-primary btn-block" type="button" 
+								<button id="runlots" class="btn btn-primary btn-block" type="button"
 									onclick=${this.runLotsBench}>Create 10,000 rows</button>
 							</div>
 							<div class="col-sm-6 smallpad">
-								<button id="add" class="btn btn-primary btn-block" type="button" 
+								<button id="add" class="btn btn-primary btn-block" type="button"
 									onclick=${this.addBench}>Append 1,000 rows</button>
 							</div>
 							<div class="col-sm-6 smallpad">
-								<button id="update" class="btn btn-primary btn-block" type="button" 
+								<button id="update" class="btn btn-primary btn-block" type="button"
 									onclick=${this.updateBench}>Update every 10th row</button>
 							</div>
 							<div class="col-sm-6 smallpad">
-								<button id="clear" class="btn btn-primary btn-block" type="button" 
+								<button id="clear" class="btn btn-primary btn-block" type="button"
 									onclick=${this.clearBench}>Clear</button>
 							</div>
 							<div class="col-sm-6 smallpad">
-								<button id="swaprows" class="btn btn-primary btn-block" type="button" 
+								<button id="swaprows" class="btn btn-primary btn-block" type="button"
 									onclick=${this.swapRowsBench}>Swap Rows</button>
 							</div>
 						</div>
@@ -219,16 +230,9 @@ class JSFrameworkBenchmark extends Solarite {
 			</div>
 			<table class="table table-hover table-striped test-data"><tbody>
 				${this.data.map(row =>
-					h`<tr class=${row.id === this.selectedId ? 'danger' : ''}>
-						<td class="col-md-1">${row.id}</td>
-						<td class="col-md-4">
-							<a onclick=${[this.setSelectedBench, row]}>${row.label}</a></td>
-						<td class="col-md-1">
-							<a onclick=${[this.removeBench, row.id]}>
-								<span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
-						</td>
-						<td class="col-md-6"/>
-					</tr>`
+					h.memo(row, [row.label, row.id === this.selectedId], row =>
+					// Whitespace inside cells would become real text nodes, cloned and laid out per row.
+					h`<tr class=${row.id === this.selectedId ? 'danger' : ''}><td class="col-md-1">${row.id}</td><td class="col-md-4"><a onclick=${[this.setSelectedBench, row]}>${row.label}</a></td><td class="col-md-1"><a onclick=${[this.removeBench, row.id]}><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a></td><td class="col-md-6"></td></tr>`)
 				)}
 			</tbody></table>
 		</div>`;

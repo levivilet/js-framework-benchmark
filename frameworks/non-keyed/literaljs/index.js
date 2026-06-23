@@ -1,6 +1,6 @@
 /** @jsx h */
 
-import { render, component, h } from 'literaljs';
+import { App as LiteralJSApp, component, h } from 'literaljs';
 
 import { Store } from './store';
 
@@ -119,7 +119,7 @@ const App = component({
 					</div>
 				</div>
 				<table class="table table-hover table-striped test-data">
-					<tbody>
+					<tbody id="tbody">
 						{store.data.map(item => (
 							<tr
 								class={
@@ -162,4 +162,5 @@ const App = component({
 	}
 });
 
-render(App, 'root', {});
+const app = new LiteralJSApp(App);
+app.mount('root');
