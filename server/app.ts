@@ -87,10 +87,11 @@ function buildServer(options: FastifyServerOptions = {}) {
   });
 
   fastify.addHook("onRequest", function (request, reply, done) {
+    reply.header("Cross-Origin-Resource-Policy", "same-origin");
+    reply.header("Cross-Origin-Embedder-Policy", "require-corp");
+    reply.header("Cross-Origin-Opener-Policy", "same-origin");
     if (request.url.endsWith("index.html")) {
       this.responseSize.reset();
-      reply.header("Cross-Origin-Embedder-Policy", "require-corp");
-      reply.header("Cross-Origin-Opener-Policy", "same-origin");
     }
     done();
   });
