@@ -16,8 +16,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@lvce-editor/virtual-dom": "11.10.0",
-    "@lvce-editor/virtual-dom-worker": "11.10.0"
+    "@lvce-editor/virtual-dom": "11.21.0",
+    "@lvce-editor/virtual-dom-worker": "11.21.0"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "16.0.3",

@@ -109,7 +109,7 @@ const optimizedDiffChildren = `const diffChildren = (oldChildren, newChildren, p
 };
 `
 
-const nextSource = source.replace(/const diffChildren = \(oldChildren, newChildren, patches\) => \{[\s\S]*?\n\};\nexport const diffTrees = /, `${optimizedDiffChildren}export const diffTrees = `)
+const nextSource = source.replace(/const diffChildren = \(oldChildren, newChildren, patches\) => \{[\s\S]*?\n\};(?=\n(?:const|export))/, optimizedDiffChildren.trimEnd())
 
 if (nextSource === source) {
   throw new Error(`Failed to patch ${diffTreesPath}`)
