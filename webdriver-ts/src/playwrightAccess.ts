@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { Browser, Page } from "playwright-core";
 import { chromium } from "playwright";
 import { BenchmarkOptions } from "./common.js";
@@ -96,7 +97,7 @@ function browserPath(benchmarkOptions: BenchmarkOptions) {
   if (process.platform == "darwin") {
     return "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
   } else if (process.platform == "linux") {
-    return "/snap/bin/chromium";
+    return existsSync("/snap/bin/chromium") ? "/snap/bin/chromium" : "/usr/bin/google-chrome";
   } else if (/^win/i.test(process.platform)) {
     return "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
   } else {

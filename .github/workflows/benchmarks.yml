@@ -1,0 +1,235 @@
+name: Benchmarks
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/benchmarks.yml"
+      - "frameworks/**"
+      - "package-lock.json"
+      - "package.json"
+      - "server/**"
+      - "webdriver-ts/**"
+      - "webdriver-ts-results/**"
+  workflow_dispatch:
+    inputs:
+      frameworks:
+        description: "Space-separated frameworks to benchmark, e.g. keyed/react non-keyed/vue. Defaults to vanilla baselines."
+        required: false
+        type: string
+      count:
+        description: "Iterations per benchmark. Keep this small for CI; official runs should use the local defaults."
+        required: false
+        default: "3"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  benchmarks:
+    name: Run benchmark results
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    env:
+      BENCHMARK_COUNT: ${{ github.event_name == 'pull_request' && '1' || inputs.count || '3' }}
+      INPUT_FRAMEWORKS: ${{ inputs.frameworks || '' }}
+      PR_NON_KEYED_COMPARISON_FRAMEWORKS: >-
+        non-keyed/aberdeen non-keyed/alins non-keyed/apprun non-keyed/arrowjs
+        non-keyed/art non-keyed/aurelia non-keyed/bau non-keyed/binding.scala
+        non-keyed/bui non-keyed/cyclejs-dom non-keyed/cydon non-keyed/deleight
+        non-keyed/delorean non-keyed/dlightjs non-keyed/doz non-keyed/ef-js
+        non-keyed/fast non-keyed/frei-hooks non-keyed/gyron non-keyed/hydro-js
+        non-keyed/imba non-keyed/inferno non-keyed/knno-jsx non-keyed/kobold
+        non-keyed/korvin non-keyed/legend-state-optimized non-keyed/lit
+        non-keyed/literaljs non-keyed/lit-html non-keyed/maquette non-keyed/mikado
+        non-keyed/mimbl non-keyed/mogwai non-keyed/mutraction non-keyed/openui5
+        non-keyed/plastron-dom non-keyed/qingkuai non-keyed/quel non-keyed/ractive
+        non-keyed/ravel non-keyed/redom non-keyed/reflex-dom non-keyed/reken
+        non-keyed/riot non-keyed/san non-keyed/scarlets-frame non-keyed/seed
+        non-keyed/skruv-liten non-keyed/slim-js non-keyed/solarite non-keyed/stdweb
+        non-keyed/svelte-classic non-keyed/udomsay-esx non-keyed/uhtml
+        non-keyed/ui5-webcomponents non-keyed/vanillajs non-keyed/vanillajs-1
+        non-keyed/vanillajs-3 non-keyed/virtual-dom non-keyed/vode non-keyed/vue
+        non-keyed/vue-jsx-vapor non-keyed/vue-vapor non-keyed/wallace
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect frameworks to benchmark
+        id: frameworks
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -n "$INPUT_FRAMEWORKS" ]]; then
+            read -r -a changed_frameworks <<< "$INPUT_FRAMEWORKS"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            mapfile -t changed_frameworks < <(
+              git diff --name-only "${{ github.event.pull_request.base.sha }}" HEAD |
+                awk -F/ '/^frameworks\/(keyed|non-keyed)\/[^/]+\// { print $2 "/" $3 }' |
+                sort -u
+            )
+          else
+            changed_frameworks=()
+          fi
+
+          run_frameworks=()
+          has_keyed=false
+          has_non_keyed=false
+
+          for framework in "${changed_frameworks[@]}"; do
+            [[ -z "$framework" ]] && continue
+            if [[ ! -f "frameworks/${framework}/package.json" ]]; then
+              echo "::error::Unknown framework '${framework}'. Expected frameworks/${framework}/package.json."
+              exit 1
+            fi
+            run_frameworks+=("$framework")
+            case "$framework" in
+              keyed/*) has_keyed=true ;;
+              non-keyed/*) has_non_keyed=true ;;
+              *)
+                echo "::error::Framework '${framework}' must start with keyed/ or non-keyed/."
+                exit 1
+                ;;
+              esac
+          done
+
+          if [[ "${{ github.event_name }}" == "pull_request" && "$has_non_keyed" == true ]]; then
+            read -r -a comparison_frameworks <<< "$PR_NON_KEYED_COMPARISON_FRAMEWORKS"
+            run_frameworks+=("${comparison_frameworks[@]}")
+          fi
+
+          if [[ ${#run_frameworks[@]} -eq 0 ]]; then
+            run_frameworks=("keyed/vanillajs" "non-keyed/vanillajs")
+          else
+            $has_keyed && run_frameworks+=("keyed/vanillajs")
+            $has_non_keyed && run_frameworks+=("non-keyed/vanillajs")
+          fi
+
+          mapfile -t unique_frameworks < <(printf "%s\n" "${run_frameworks[@]}" | sort -u)
+          framework_list="${unique_frameworks[*]}"
+          changed_framework_list="${changed_frameworks[*]}"
+
+          echo "run_frameworks=${framework_list}" >> "$GITHUB_OUTPUT"
+          echo "changed_frameworks=${changed_framework_list}" >> "$GITHUB_OUTPUT"
+          echo "Benchmarking: ${framework_list}"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.0"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            webdriver-ts/package-lock.json
+            webdriver-ts-results/package-lock.json
+
+      - name: Install benchmark tooling
+        run: |
+          npm ci --ignore-scripts
+          npm run install-local
+
+      - name: Ensure Chrome path
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -x /usr/bin/google-chrome ]]; then
+            sudo ln -s "$(command -v google-chrome-stable)" /usr/bin/google-chrome
+          fi
+          /usr/bin/google-chrome --version
+
+      - name: Build benchmark implementations
+        id: build-frameworks
+        env:
+          RUN_FRAMEWORKS: ${{ steps.frameworks.outputs.run_frameworks }}
+          REQUIRED_FRAMEWORKS: ${{ steps.frameworks.outputs.changed_frameworks }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          read -r -a frameworks <<< "$RUN_FRAMEWORKS"
+          read -r -a required_frameworks <<< "$REQUIRED_FRAMEWORKS"
+          built_frameworks=()
+          failed_frameworks=()
+
+          for framework in "${frameworks[@]}"; do
+            if node -e 'import("./cli/rebuild-build-single.js").then(({ rebuildFrameworks }) => process.exit(rebuildFrameworks(process.argv.slice(1), true) ? 0 : 1));' "$framework"; then
+              built_frameworks+=("$framework")
+            else
+              failed_frameworks+=("$framework")
+              echo "::warning::Skipping comparison framework '${framework}' because its build failed."
+            fi
+          done
+
+          for required_framework in "${required_frameworks[@]}"; do
+            [[ -z "$required_framework" ]] && continue
+            if ! printf '%s\n' "${built_frameworks[@]}" | grep -Fxq "$required_framework"; then
+              echo "::error::Required changed framework '${required_framework}' did not build."
+              exit 1
+            fi
+          done
+
+          if [[ ${#built_frameworks[@]} -eq 0 ]]; then
+            echo "::error::No benchmark implementations built successfully."
+            exit 1
+          fi
+
+          echo "Built frameworks: ${built_frameworks[*]}"
+          if [[ ${#failed_frameworks[@]} -gt 0 ]]; then
+            echo "Skipped frameworks: ${failed_frameworks[*]}"
+          fi
+          echo "built_frameworks=${built_frameworks[*]}" >> "$GITHUB_OUTPUT"
+
+      - name: Start benchmark server
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm start > /tmp/js-framework-benchmark-server.log 2>&1 &
+          echo "SERVER_PID=$!" >> "$GITHUB_ENV"
+
+          for _ in {1..60}; do
+            if curl -fsS http://localhost:8080/ls > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          cat /tmp/js-framework-benchmark-server.log
+          exit 1
+
+      - name: Run benchmarks
+        env:
+          RUN_FRAMEWORKS: ${{ steps.build-frameworks.outputs.built_frameworks }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          read -r -a frameworks <<< "$RUN_FRAMEWORKS"
+          cd webdriver-ts
+          npm run bench -- --runner playwright --headless true --count "$BENCHMARK_COUNT" --framework "${frameworks[@]}"
+
+      - name: Build results HTML
+        run: npm run results
+
+      - name: Stop benchmark server
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "${SERVER_PID:-}" ]]; then
+            kill "$SERVER_PID" 2>/dev/null || true
+          fi
+
+      - name: Upload benchmark artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          if-no-files-found: warn
+          path: |
+            webdriver-ts/results/
+            webdriver-ts/results.json
+            webdriver-ts-results/src/results.ts
+            webdriver-ts-results/dist/
