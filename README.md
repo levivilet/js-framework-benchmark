@@ -10,7 +10,7 @@ Currently there are 186 implementations in this repository. It's of course impos
 for all those implementations. `npm ci` and `npm install` can execute arbitraty commands, so they should be executed only for packages you trust. Consequently I build on a dedicated virtual private linux server such that I don't have to install the packages for all those implemenations on my laptop. There's a prebuild build.zip for each chrome release you can download such that you can avoid installing the packages from all implementations. 
 (I don't know of any (attempted) case for malicious packages in this repository, so please take it just as a general warning.)
 
-The server implemenation in this repository should only be started on your local machine and access should be restricted to your local machine. I recommend against starting the server such that it can be publically accessed from the internet.
+The server implementation in this repository should only be started on your local machine and access should be restricted to your local machine. I recommend against starting the server such that it can be publically accessed from the internet.
 
 ## About the benchmarks
 
@@ -579,6 +579,11 @@ Thanks to Baptiste Augrain for making the benchmarks more sophisticated and addi
 # History
 
 Frameworks without significant activity on github or npm for more than a year will be removed (_automatic commits like dependabot and minor updates, like docs editions, are ignored_).
+
+## 2026-09-04
+The following frameworks were archived after chrome 152. Their last results are included in [chrome 152 results](https://krausest.github.io/js-framework-benchmark/2026/chrome152.html)
+- [x] keyed/incremental-dom
+- [x] keyed/react-redux-rematch
 
 ## 2024-12-11
 The following frameworks were archived after chrome 131. Their last results are included in [chrome 131 results](https://krausest.github.io/js-framework-benchmark/2024/table_chrome_131.0.6778.85.html)

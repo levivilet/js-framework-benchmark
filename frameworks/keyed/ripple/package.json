@@ -6,7 +6,8 @@
   "js-framework-benchmark": {
     "frameworkVersionFromPackage": "ripple",
     "frameworkHomeURL": "https://ripple-ts.com/",
-    "language": "JavaScript"
+    "language": "JavaScript",
+    "repoURL": "https://github.com/Ripple-TS/ripple"
   },
   "scripts": {
     "dev": "vite",
@@ -24,10 +25,10 @@
     "url": "https://github.com/krausest/js-framework-benchmark.git"
   },
   "dependencies": {
-    "ripple": "0.3.65"
+    "ripple": "0.3.112"
   },
   "devDependencies": {
-    "@ripple-ts/vite-plugin": "0.3.65",
+    "@ripple-ts/vite-plugin": "0.3.112",
     "terser": "^5.46.1",
     "vite": "^8.0.14"
   }

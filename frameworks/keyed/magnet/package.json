@@ -11,7 +11,7 @@
     "customURL": "/public",
     "includeInBuild": "public",
     "language": "JavaScript",
-    "issues": [800, 1261]
+    "repoURL": "https://gitlab.com/magnetjs/monorepo"
   },
   "scripts": {
     "dev": "exit 0",
@@ -33,6 +33,7 @@
   "homepage": "https://github.com/krausest/js-framework-benchmark#readme",
   "dependencies": {
     "@magnet-js/common": "0.2.0",
+    "@magnet-js/list": "^0.1.1",
     "@magnet-js/signal": "0.2.0",
     "@magnet-js/ui": "0.1.5",
     "@preact/signals-core": "1.14.4",
